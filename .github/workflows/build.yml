@@ -1,4 +1,4 @@
-name: Build & Release osu!lazer Exporter
+name: Build, Test & Release
 
 on:
   push:
@@ -8,20 +8,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test-and-publish:
+  build:
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             rid: win-x64
-            artifact: osu-lazer-exporter-win-x64
+            name: win-x64
           - os: ubuntu-latest
             rid: linux-x64
-            artifact: osu-lazer-exporter-linux-x64
+            name: linux-x64
           - os: macos-latest
             rid: osx-arm64
-            artifact: osu-lazer-exporter-osx-arm64
+            name: osx-arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -51,8 +51,38 @@ jobs:
             -p:DebugType=None \
             -o ./dist/${{ matrix.rid }}
 
-      - name: Upload Build Artifact
+      - name: Build Windows Installer (Inno Setup)
+        if: matrix.os == 'windows-latest'
+        uses: julir/setup-innosetup-action@v2
+
+      - name: Compile Installer Script
+        if: matrix.os == 'windows-latest'
+        run: iscc installer.iss
+
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ./dist/${{ matrix.rid }}/
+          name: artifact-${{ matrix.name }}
+          path: |
+            ./dist/${{ matrix.rid }}/*
+            ./installer_output/*.exe
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            /**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
