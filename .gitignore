@@ -1,0 +1,10 @@
+﻿bin/
+obj/
+publish/
+tools/
+.vs/
+*.user
+*.suo
+*.db
+*.log
+.DS_Store

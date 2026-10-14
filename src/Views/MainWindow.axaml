@@ -1,0 +1,210 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OsuLazerAudioExporter.ViewModels"
+        x:Class="OsuLazerAudioExporter.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="osu!lazer Audio Exporter"
+        Width="1240" Height="820"
+        MinWidth="1020" MinHeight="680"
+        Background="#13111C"
+        Foreground="#F5F3FF">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,135" Margin="18">
+
+        <!-- 1. ШАПКА (Официальный дизайн для GitHub) -->
+        <Border Grid.Row="0" CornerRadius="12" Padding="18,14" Margin="0,0,0,12"
+                BorderBrush="#3D2C5E" BorderThickness="1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Color="#221A30" Offset="0"/>
+                    <GradientStop Color="#151221" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                    <Border Background="#3E2756" BorderBrush="#7C3AED" BorderThickness="1" CornerRadius="8" Padding="12,6" VerticalAlignment="Center">
+                        <TextBlock Text="osu!lazer" FontWeight="Bold" FontSize="15" Foreground="#E9D5FF"/>
+                    </Border>
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="Audio Library Analyzer &amp; MP3 Exporter" FontWeight="SemiBold" FontSize="16" Foreground="#FFFFFF"/>
+                        <TextBlock Text="Conversion tool for local osu!lazer audio storage (.ogg / .wav to .mp3)"
+                                   FontSize="12" Foreground="#9CA3AF"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Статистика -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Background="#1D1829" BorderBrush="#342A4D" BorderThickness="1" CornerRadius="8" Padding="14,6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Indexed:" Foreground="#9E92B8" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalTracksCount}" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1D1829" BorderBrush="#7C3AED" BorderThickness="1" CornerRadius="8" Padding="14,6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Selected:" Foreground="#D8B4FE" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SelectedTracksCount}" FontWeight="Bold" FontSize="15" Foreground="#C084FC" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1D1829" BorderBrush="#059669" BorderThickness="1" CornerRadius="8" Padding="14,6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Exported:" Foreground="#A7F3D0" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SessionExportedCount}" FontWeight="Bold" FontSize="15" Foreground="#34D399" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="Download FFmpeg"
+                            IsVisible="{Binding IsFfmpegMissing}"
+                            Command="{Binding DownloadFfmpegCommand}"
+                            Background="#DC2626" Foreground="White" FontWeight="SemiBold" CornerRadius="8" Padding="14,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. ПУТИ И НАСТРОЙКИ -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,Auto" Margin="0,0,0,12">
+
+            <!-- Шаг 1 -->
+            <Border Grid.Column="0" Background="#1C1929" BorderBrush="#2E2942" BorderThickness="1"
+                    CornerRadius="10" Padding="14,10" Margin="0,0,10,0">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="1. osu!lazer Library Path" FontWeight="SemiBold" FontSize="12" Foreground="#C084FC"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LibraryStatusBadge}" FontSize="11" Foreground="#9CA3AF"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0" Text="{Binding LazerLibraryPath}" Watermark="%APPDATA%\osu" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Content="Browse…" Click="OnSelectLazerFolderClick" Background="#2D2740"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Шаг 2 -->
+            <Border Grid.Column="1" Background="#1C1929" BorderBrush="#2E2942" BorderThickness="1"
+                    CornerRadius="10" Padding="14,10" Margin="0,0,10,0">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="2. Output Directory" FontWeight="SemiBold" FontSize="12" Foreground="#34D399"/>
+                        <TextBlock Grid.Column="1" Text="Output: osu_mp3_Timestamp/*.mp3" FontSize="11" Foreground="#6EE7B7"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBox Grid.Column="0" Text="{Binding OutputDirectory}" Watermark="Destination folder" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Content="Change…" Click="OnSelectOutputFolderClick" Background="#2D2740" Margin="0,0,6,0"/>
+                        <Button Grid.Column="2" Content="Open Folder" Command="{Binding OpenExportFolderCommand}"
+                                Background="#164E63" Foreground="#67E8F9" FontWeight="SemiBold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Качество -->
+            <Border Grid.Column="2" Background="#1C1929" BorderBrush="#2E2942" BorderThickness="1"
+                    CornerRadius="10" Padding="14,10">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Encoding &amp; Watcher" FontWeight="SemiBold" FontSize="12" Foreground="#A78BFA"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox ItemsSource="{Binding AvailableBitrates}"
+                                  SelectedItem="{Binding SelectedBitrate}" Width="95" VerticalAlignment="Center"/>
+                        <TextBlock Text="kbps" VerticalAlignment="Center" Foreground="#9E92B8" FontSize="12" Margin="0,0,6,0"/>
+                        <Button Content="{Binding WatchModeButtonText}"
+                                Command="{Binding ToggleWatchModeCommand}"
+                                Background="#2D2740" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 3. ПАНЕЛЬ ДЕЙСТВИЙ И ПОИСК -->
+        <Border Grid.Row="2" Background="#1C1929" BorderBrush="#2E2942" BorderThickness="1"
+                CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Scan Library"
+                            Command="{Binding ScanLibraryCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Background="#7C3AED" Foreground="White" FontWeight="Bold"
+                            Padding="16,8" CornerRadius="8"/>
+
+                    <Button Content="Export Selected to MP3"
+                            Command="{Binding ExportSelectedCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Background="#059669" Foreground="White" FontWeight="Bold"
+                            Padding="16,8" CornerRadius="8"/>
+
+                    <Button Content="Stop"
+                            Command="{Binding CancelOperationCommand}"
+                            IsVisible="{Binding IsBusy}"
+                            Background="#DC2626" Foreground="White" FontWeight="Bold"
+                            Padding="14,8" CornerRadius="8"/>
+
+                    <Button Content="Select All"
+                            Command="{Binding SelectAllCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Background="#2A243B" Padding="12,8" CornerRadius="8"/>
+
+                    <Button Content="Deselect All"
+                            Command="{Binding DeselectAllCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Background="#2A243B" Padding="12,8" CornerRadius="8"/>
+                </StackPanel>
+
+                <!-- Поиск -->
+                <Grid Grid.Column="1" ColumnDefinitions="*,Auto" Margin="14,0,0,0">
+                    <TextBox Grid.Column="0" Text="{Binding SearchQuery}"
+                             Watermark="Filter by artist, title, mapper or format..."
+                             VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="✕" Command="{Binding ClearSearchCommand}"
+                            Background="#2A243B" Margin="6,0,0,0" ToolTip.Tip="Clear filter"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 4. ТАБЛИЦА -->
+        <Border Grid.Row="3" Background="#181523" CornerRadius="10" BorderBrush="#2E2942" BorderThickness="1" Margin="0,0,0,12">
+            <DataGrid ItemsSource="{Binding FilteredBeatmaps}"
+                      AutoGenerateColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#252036"
+                      RowBackground="#181523">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="✓" Binding="{Binding IsSelected}" Width="55"/>
+                    <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="2*" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="2*" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Creator" Binding="{Binding Creator}" Width="*" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="90" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Duration" Binding="{Binding DurationFormatted}" Width="90" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="180" IsReadOnly="True"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- 5. ПРОГРЕСС -->
+        <Border Grid.Row="4" Background="#1C1929" BorderBrush="#2E2942" BorderThickness="1"
+                CornerRadius="10" Padding="14,10" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="6" Margin="0,0,14,0">
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="13" FontWeight="SemiBold" Foreground="#F5F3FF"/>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding OverallProgressPercent}"
+                                 Height="14" ShowProgressText="True" CornerRadius="6"
+                                 Foreground="#7C3AED" Background="#120F1A"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="Open Output Folder"
+                        Command="{Binding OpenExportFolderCommand}"
+                        VerticalAlignment="Center"
+                        Background="#2D2740" Foreground="#FFFFFF" FontWeight="SemiBold"
+                        Padding="14,10" CornerRadius="8"/>
+            </Grid>
+        </Border>
+
+        <!-- 6. ЛОГИ -->
+        <Border Grid.Row="5" Background="#0E0C14" CornerRadius="10" Padding="8" BorderBrush="#252036" BorderThickness="1">
+            <ListBox ItemsSource="{Binding LogEntries}" Background="Transparent"
+                     FontFamily="Consolas, Monospace" FontSize="12" Foreground="#A39BB5"/>
+        </Border>
+    </Grid>
+</Window>
