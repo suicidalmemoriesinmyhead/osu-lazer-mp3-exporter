@@ -81,7 +81,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            /**/*
+            artifact-*/**/*
           draft: false
           prerelease: false
         env:
