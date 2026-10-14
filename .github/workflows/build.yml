@@ -41,25 +41,17 @@ jobs:
         run: dotnet test OsuLazerAudioExporter.sln --no-restore --verbosity normal
 
       - name: Publish Single-File Binary (${{ matrix.rid }})
-        run: |
-          dotnet publish src/OsuLazerAudioExporter.csproj \
-            -c Release \
-            -r ${{ matrix.rid }} \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:DebugType=None \
-            -o ./publish_dir
+        shell: pwsh
+        run: dotnet publish src/OsuLazerAudioExporter.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o ./publish_dir
 
       - name: Archive Release (Windows)
         if: matrix.os == 'windows-latest'
-        run: |
-          Compress-Archive -Path ./publish_dir/* -DestinationPath ./osu-lazer-exporter-${{ matrix.name }}.zip
+        shell: pwsh
+        run: Compress-Archive -Path ./publish_dir/* -DestinationPath ./osu-lazer-exporter-${{ matrix.name }}.zip
 
       - name: Archive Release (Unix)
         if: matrix.os != 'windows-latest'
-        run: |
-          tar -czvf ./osu-lazer-exporter-${{ matrix.name }}.tar.gz -C ./publish_dir .
+        run: tar -czvf ./osu-lazer-exporter-${{ matrix.name }}.tar.gz -C ./publish_dir .
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
