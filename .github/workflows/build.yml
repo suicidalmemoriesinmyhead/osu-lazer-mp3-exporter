@@ -49,23 +49,25 @@ jobs:
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:DebugType=None \
-            -o ./dist/${{ matrix.rid }}
+            -o ./publish_dir
 
-      - name: Build Windows Installer (Inno Setup)
+      - name: Archive Release (Windows)
         if: matrix.os == 'windows-latest'
-        uses: julir/setup-innosetup-action@v2
+        run: |
+          Compress-Archive -Path ./publish_dir/* -DestinationPath ./osu-lazer-exporter-${{ matrix.name }}.zip
 
-      - name: Compile Installer Script
-        if: matrix.os == 'windows-latest'
-        run: iscc installer.iss
+      - name: Archive Release (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          tar -czvf ./osu-lazer-exporter-${{ matrix.name }}.tar.gz -C ./publish_dir .
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ matrix.name }}
           path: |
-            ./dist/${{ matrix.rid }}/*
-            ./installer_output/*.exe
+            ./osu-lazer-exporter-*.zip
+            ./osu-lazer-exporter-*.tar.gz
 
   release:
     needs: build
