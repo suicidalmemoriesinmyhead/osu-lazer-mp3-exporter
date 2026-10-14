@@ -1,0 +1,58 @@
+name: Build & Release osu!lazer Exporter
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-and-publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: osu-lazer-exporter-win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: osu-lazer-exporter-linux-x64
+          - os: macos-latest
+            rid: osx-arm64
+            artifact: osu-lazer-exporter-osx-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore OsuLazerAudioExporter.sln
+
+      - name: Run Unit Tests
+        run: dotnet test OsuLazerAudioExporter.sln --no-restore --verbosity normal
+
+      - name: Publish Single-File Binary (${{ matrix.rid }})
+        run: |
+          dotnet publish src/OsuLazerAudioExporter.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None \
+            -o ./dist/${{ matrix.rid }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ./dist/${{ matrix.rid }}/
